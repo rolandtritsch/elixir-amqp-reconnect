@@ -12,7 +12,9 @@ recreate/reestablish it on the fly.
 This repo shows one way to make this work.
 
 * clone the repo
-* run `docker ...` to start a rabbitmq server
+* run `docker run --interactive --tty --rm --name
+ rabbitmq --publish 5672:5672 --publish 15672:15672 rabbitmq:3.9-management`
+ to start a rabbitmq server
 * run `mix deps.get && mix phx.server` to start the
 elixir/phoenix server
 * start a second terminal

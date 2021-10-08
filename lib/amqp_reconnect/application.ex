@@ -6,7 +6,8 @@ defmodule AmqpReconnect.Application do
   @impl true
   def start(_type, _args) do
     children = [
-      AmqpReconnectWeb.Endpoint
+      AmqpReconnectWeb.Endpoint,
+      AmqpReconnect.Publisher
     ]
 
     opts = [strategy: :one_for_one, name: AmqpReconnect.Supervisor]

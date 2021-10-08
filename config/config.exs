@@ -7,20 +7,17 @@
 # General application configuration
 import Config
 
-config :amqp_reconnect,
-  ecto_repos: [AmqpReconnect.Repo]
-
 # Configures the endpoint
 config :amqp_reconnect, AmqpReconnectWeb.Endpoint,
   url: [host: "localhost"],
-  render_errors: [view: AmqpReconnectWeb.ErrorView, accepts: ~w(json), layout: false],
-  pubsub_server: AmqpReconnect.PubSub,
-  live_view: [signing_salt: "sUV09qIK"]
+  render_errors: [view: AmqpReconnectWeb.ErrorView, accepts: ~w(json), layout: false]
 
 # Configures Elixir's Logger
 config :logger, :console,
   format: "$time $metadata[$level] $message\n",
   metadata: [:request_id]
+
+config :logger, level: :info
 
 # Use Jason for JSON parsing in Phoenix
 config :phoenix, :json_library, Jason
