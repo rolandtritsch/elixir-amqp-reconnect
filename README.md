@@ -16,8 +16,8 @@ This repo shows one way to make this work.
 * run `mix deps.get && mix phx.server` to start the
 elixir/phoenix server
 * start a second terminal
-* run `curl --silent --request GET http://localhost:4000/start`
+* run `curl --silent --request GET http://localhost:4000/api/start`
 to start publishing messages on the bus
-* run `curl --silent --request GET http://localhost:4000/kill`
+* run `curl --silent --request GET http://localhost:4000/api/kill`
 to kill the connection (and simulate a connection failure)
 * wait for the connection to get recreated/reestablished
