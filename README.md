@@ -23,3 +23,5 @@ to start publishing messages on the bus
 * run `curl --silent --request GET http://localhost:4000/api/kill`
 to kill the connection (and simulate a connection failure)
 * wait for the connection to get recreated/reestablished
+* run `curl --silent --request GET http://localhost:4000/api/stop`
+to stop publishing messages
