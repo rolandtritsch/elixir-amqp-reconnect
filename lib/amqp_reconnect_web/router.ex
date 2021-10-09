@@ -10,5 +10,6 @@ defmodule AmqpReconnectWeb.Router do
 
     get "/start", ApiController, :start
     get "/kill", ApiController, :kill
+    get "/stop", ApiController, :stop
   end
 end

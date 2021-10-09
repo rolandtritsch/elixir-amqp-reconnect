@@ -9,6 +9,7 @@ defmodule AmqpReconnect.Publisher do
 
   def run(), do: GenServer.cast(__MODULE__, :run)
   def kill(), do: GenServer.cast(__MODULE__, :kill)
+  def stop(), do: GenServer.cast(__MODULE__, :stop)
 
   def start_link(args) do
     GenServer.start_link(__MODULE__, args, name: __MODULE__)
@@ -18,43 +19,52 @@ defmodule AmqpReconnect.Publisher do
 
   @impl true
   def init(_args) do
-    {:ok, conn} = AMQP.Connection.open()
-    {:ok, chan} = AMQP.Channel.open(conn)
-
-    Logger.info(inspect(conn))
-    Logger.info(inspect(chan))
-
-    state = %{connection: conn, channel: chan}
-    {:ok, state}
+    {:ok, {connect(), :stopped}}
   end
 
   @impl true
-  def handle_cast(:run, state) do
-    Process.send_after(self(), :publish, 0)
-    {:noreply, state}
+  def handle_cast(:run, {channel, _}) do
+    Process.send_after(self(), :publish, 1_000)
+    {:noreply, {channel, :running}}
   end
 
   @impl true
-  def handle_cast(:kill, %{channel: %AMQP.Channel{pid: cpid}} = state) do
+  def handle_cast(:kill, {%AMQP.Channel{pid: cpid} = channel, state}) do
     Process.exit(cpid, :channel_died)
-    {:noreply, state}
+    {:noreply, {channel, state}}
   end
 
   @impl true
-  def handle_info(:publish, %{channel: chan} = state) do
+  def handle_cast(:stop, {channel, _}) do
+    {:noreply, {channel, :stopped}}
+  end
+
+  @impl true
+  def handle_info(:publish, {channel, :running}) do
     payload = "payload - #{NaiveDateTime.utc_now}"
     Logger.info("Publish: #{payload}")
 
-    state = try do
-      :ok = AMQP.Basic.publish(chan, "amq.fanout", "#", payload)
-      state
+    channel = try do
+      :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", payload)
+      channel
     catch
       :exit, _ ->
         Logger.info("Basic.publish(): infrastructure_/channel_died. Restarting ...")
-        state
+        connect()
     end
           
     Process.send_after(self(), :publish, 1_000)
-    {:noreply, state}
+    {:noreply, {channel, :running}}
+  end
+
+  @impl true
+  def handle_info(:publish, {channel, state}) do
+    {:noreply, {channel, state}}
+  end
+     
+  defp connect() do
+    {:ok, connection} = AMQP.Connection.open()
+    {:ok, channel} = AMQP.Channel.open(connection)
+    channel
   end
 end

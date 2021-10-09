@@ -16,4 +16,12 @@ defmodule AmqpReconnectWeb.ApiController do
     |> put_status(:ok)
     |> text("connection killed")
   end
+
+  def stop(conn, _params) do
+    AmqpReconnect.Publisher.stop()
+    
+    conn
+    |> put_status(:ok)
+    |> text("publisher stopped")
+  end
 end
