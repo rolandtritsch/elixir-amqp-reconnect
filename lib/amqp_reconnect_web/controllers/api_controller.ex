@@ -2,15 +2,15 @@ defmodule AmqpReconnectWeb.ApiController do
   use AmqpReconnectWeb, :controller
 
   def start(conn, _params) do
-    AmqpReconnect.Publisher.run()
+    AmqpReconnect.Batcher.run()
     
     conn
     |> put_status(:ok)
-    |> text("publisher started")
+    |> text("batcher started")
   end
 
   def kill(conn, _params) do
-    AmqpReconnect.Publisher.kill()
+    AmqpReconnect.Batcher.kill()
     
     conn
     |> put_status(:ok)
@@ -18,10 +18,10 @@ defmodule AmqpReconnectWeb.ApiController do
   end
 
   def stop(conn, _params) do
-    AmqpReconnect.Publisher.stop()
+    AmqpReconnect.Batcher.stop()
     
     conn
     |> put_status(:ok)
-    |> text("publisher stopped")
+    |> text("batcher stopped")
   end
 end
