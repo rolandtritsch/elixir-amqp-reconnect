@@ -56,14 +56,15 @@ defmodule AmqpReconnect.Publisher do
     {:noreply, {channel, state}}
   end
      
-  def handle_info({:EXIT, _pid, _reason}, {_, state}) do
-    Logger.info("Basic.publish(): infrastructure_/channel_died. Restarting ...")
+  def handle_info({:EXIT, pid, reason}, {_, state}) do
+    Logger.info("Basic.publish(): infrastructure_/channel_died (#{inspect(pid)}/#{inspect(reason)}). Restarting ...")
     {:noreply, {connect(), state}}
   end
   
   defp connect() do
-    {:ok, connection} = AMQP.Connection.open()
+    {:ok, %AMQP.Connection{pid: pid} = connection} = AMQP.Connection.open()
     {:ok, channel} = AMQP.Channel.open(connection)
+    Process.link(pid)
     channel
   end
 end
