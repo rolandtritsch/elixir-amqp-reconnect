@@ -49,8 +49,10 @@ defmodule AmqpReconnect.Publisher do
       channel
     catch
       :exit, _ ->
-        Logger.info("Basic.publish(): infrastructure_/channel_died. Restarting ...")
-        connect()
+        Logger.info("Basic.publish(): infrastructure_/channel_died. Restarting/retry/republishing ...")
+        channel = connect()
+        :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", payload)
+        channel
     end
           
     Process.send_after(self(), :publish, 1_000)
