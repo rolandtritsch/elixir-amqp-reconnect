@@ -44,16 +44,7 @@ defmodule AmqpReconnect.Publisher do
     payload = "payload - #{NaiveDateTime.utc_now}"
     Logger.info("Publish: #{payload}")
 
-    channel = try do
-      :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", payload)
-      channel
-    catch
-      :exit, _ ->
-        Logger.info("Basic.publish(): infrastructure_/channel_died. Restarting/retry/republishing ...")
-        channel = connect()
-        :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", payload)
-        channel
-    end
+    channel = try_publish(channel, payload)
           
     Process.send_after(self(), :publish, 1_000)
     {:noreply, {channel, :running}}
@@ -63,10 +54,23 @@ defmodule AmqpReconnect.Publisher do
   def handle_info(:publish, {channel, state}) do
     {:noreply, {channel, state}}
   end
+
+  # --- private functions
      
   defp connect() do
     {:ok, connection} = AMQP.Connection.open()
     {:ok, channel} = AMQP.Channel.open(connection)
     channel
+  end
+
+  defp try_publish(channel, payload) do
+    :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", payload)
+    channel
+  catch
+    :exit, _ ->
+      Logger.info("Basic.publish(): infrastructure_/channel_died. Restart and retry (once) ...")
+      channel = connect()
+      :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", payload)
+      channel
   end
 end
