@@ -7,9 +7,12 @@ the channel to die unexepectedly.
 Recovering from this is not as straight forward as
 it sounds, because you first need to detect that the
 connection/channel died and then you need to
-recreate/reestablish it on the fly.
+recreate/reestablish it on the fly and then you
+need to retry to publish what ever you want/need
+to publish (assuming you are implementing an at-least-once
+behavior).
 
-This repo shows one way to make this work.
+This repo shows a couple of ways to make this happen.
 
 * clone the repo
 * run `docker run --interactive --tty --rm --name
@@ -25,3 +28,12 @@ to kill the connection (and simulate a connection failure)
 * wait for the connection to get recreated/reestablished
 * run `curl --silent --request GET http://localhost:4000/api/stop`
 to stop publishing messages
+
+There are multiple solutions/branches available ...
+
+* `trunk` shows how to use `catch`
+* `trap_exit` shows how to use `trap_exit`
+* `supervisor` shows how to use a `supervisor`
+
+For more background you can read the blog
+[post](https://tedn.life/2021/10/26/reconnecting-to-rabbitmq-with-amqp-in-elixir/)
