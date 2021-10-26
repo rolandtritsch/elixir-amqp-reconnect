@@ -60,6 +60,8 @@ defmodule AmqpReconnect.Publisher do
     Logger.info("Basic.publish(): infrastructure_/channel_died (#{inspect(pid)}/#{inspect(reason)}). Restarting ...")
     {:noreply, {connect(), state}}
   end
+
+  # --- private functions
   
   defp connect() do
     {:ok, %AMQP.Connection{pid: pid} = connection} = AMQP.Connection.open()
