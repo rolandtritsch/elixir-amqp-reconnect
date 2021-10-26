@@ -22,3 +22,5 @@ erl_crash.dump
 # Ignore package tarball (built via "mix hex.build").
 amqp_reconnect-*.tar
 
+# Roland's stuff
+.tool-versions
