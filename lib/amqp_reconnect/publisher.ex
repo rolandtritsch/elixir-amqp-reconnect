@@ -14,7 +14,8 @@ defmodule AmqpReconnect.Publisher do
   # --- callbacks 
 
   @impl true
-  def init(batch) do
+  def init({batch, batcher_pid}) do
+    Process.link(batcher_pid)
     Process.send_after(self(), :publish, 1_000)
     {:ok, {connect(), batch}}
   end
