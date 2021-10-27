@@ -15,8 +15,6 @@ defmodule AmqpReconnect.Publisher do
 
   @impl true
   def init({batch, batcher_pid}) do
-    Process.flag(:trap_exit, :true)
-    
     Process.link(batcher_pid)
     Process.send_after(self(), :publish, 1_000)
     
@@ -49,47 +47,7 @@ defmodule AmqpReconnect.Publisher do
   end
  
   @impl true
-  def handle_info({:EXIT, pid, {:shutdown, {:internal_error, 541, reason}}}, state) do
-    Logger.info(":exit/#{inspect(reason)} detected (#{inspect(pid)}) ...")
-    {:stop, :infrastructure_died, state}
-  end
-  
-  @impl true
-  def handle_info({:EXIT, pid, {:noproc, _}}, state) do
-    Logger.info(":exit/:noproc detected (#{inspect(pid)}) ...")
-    {:stop, :infrastructure_died, state}
-  end
-  
-  @impl true
-  def handle_info({:EXIT, pid, reason}, state) do
-    Logger.info(":exit/#{inspect(reason)} detected (#{inspect(pid)}) ...")
-    {:noreply, state}
-  end
-  
-  @impl true
-  def handle_info(info, state) do
-    Logger.info("Unexpected info detected (#{inspect(info)}) ...")
-    {:noreply, state}
-  end
-  
-  @impl true
-  def terminate(:infrastructure_died, _state) do
-    Logger.info("Reason :infrastructure_died ...")
-   
-    :terminate_does_not_return_anything
-  end 
-  
-  @impl true
-  def terminate({:noproc, _}, _state) do
-    Logger.info("Reason :noproc ...")
-   
-    :terminate_does_not_return_anything
-  end 
-  
-  @impl true
-  def terminate(reason, {channel, _batch}) do
-    Logger.info("Reason #{inspect(reason)} ...")
-    
+  def terminate(:normal, {channel, _batch}) do
     connection = channel.conn    
     AMQP.Channel.close(channel)
     AMQP.Connection.close(connection)
@@ -100,9 +58,8 @@ defmodule AmqpReconnect.Publisher do
   # --- private functions
      
   defp connect() do
-    {:ok, %AMQP.Connection{pid: pid} = connection} = AMQP.Connection.open()
+    {:ok, connection} = AMQP.Connection.open()
     {:ok, channel} = AMQP.Channel.open(connection)
-    Process.link(pid)
     channel
   end
 end

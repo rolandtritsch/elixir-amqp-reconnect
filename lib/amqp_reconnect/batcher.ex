@@ -96,16 +96,4 @@ defmodule AmqpReconnect.Batcher do
     Logger.info(":exit/:infrastructure_died detected (#{inspect(pid)}) ...")
     {:noreply, state}
   end
-
-  @impl true
-  def handle_info({:EXIT, pid, {:noproc, _}}, state) do
-    Logger.info(":exit/:noproc detected (#{inspect(pid)}) ...")
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:EXIT, pid, reason}, state) do
-    Logger.info(":exit/#{inspect(reason)} detected (#{inspect(pid)}) ...")
-    {:noreply, state}
-  end
 end
