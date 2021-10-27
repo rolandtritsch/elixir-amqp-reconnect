@@ -16,10 +16,6 @@ config :amqp_reconnect, AmqpReconnectWeb.Endpoint,
   secret_key_base: "t3OI1iEYKsyk9KfRAit/mpYX6BOCDYn/kq1Wrwqd9ISihxhWDWgbxkCNAD7FL1RL",
   watchers: []
 
-# Do not include metadata nor timestamps in development logs
-config :logger, :console,
-  format: "[$level] $message\n"
-
 # Set a higher stacktrace during development. Avoid configuring such
 # in production as building large stacktraces may be expensive.
 config :phoenix, :stacktrace_depth, 20

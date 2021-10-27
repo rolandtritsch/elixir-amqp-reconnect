@@ -14,8 +14,13 @@ config :amqp_reconnect, AmqpReconnectWeb.Endpoint,
 
 # Configures Elixir's Logger
 config :logger, :console,
-  format: "$time $metadata[$level] $message\n",
-  metadata: [:request_id]
+  format: "$time - $level - $metadata: $message\n",
+  metadata: [
+    :pid,
+    :mfa,
+    :file,
+    :line
+  ]
 
 config :logger, level: :info
 
