@@ -14,41 +14,40 @@ defmodule AmqpReconnect.Publisher do
   # --- callbacks 
 
   @impl true
-  def init({batch, batcher_pid}) do
-    Process.link(batcher_pid)
+  def init({batch, bpid}) do
     Process.send_after(self(), :publish, 1_000)
-    
-    {:ok, {connect(), batch}}
+    state = {connect(), batch, bpid} 
+    {:ok, state}
   end
 
   @impl true
-  def handle_info(:kill, {%AMQP.Channel{pid: cpid}, _batch} = state) do
+  def handle_info(:kill, {%AMQP.Channel{pid: cpid}, _batch, _bpid} = state) do
     Process.exit(cpid, :channel_died)
     {:noreply, state}
   end
 
   @impl true
-  def handle_info(:publish, {_channel, []} = state) do
+  def handle_info(:publish, {_channel, [], _bpid} = state) do
     {:stop, :normal, state}
   end
   
   @impl true
-  def handle_info(:publish, {channel, [event | events]}) do
+  def handle_info(:publish, {channel, [event | events], bpid}) do
     Logger.info("Publishing event (#{event}) ...")
 
-    try do
-      :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", event)
-    catch
-      :exit, {:noproc, _} -> Process.exit(self(), :infrastructure_died)
-    end
+    :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", event)
     
     Process.send_after(self(), :publish, 1_000)
-    {:noreply, {channel, events}}
+
+    state = {channel, events, bpid}
+    {:noreply, state}
   end
  
   @impl true
-  def terminate(:normal, {channel, _batch}) do
-    connection = channel.conn    
+  def terminate(:normal, {channel, _batch, bpid}) do
+    Process.send_after(bpid, :next, 0)
+    
+    connection = channel.conn
     AMQP.Channel.close(channel)
     AMQP.Connection.close(connection)
     

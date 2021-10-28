@@ -30,8 +30,6 @@ defmodule AmqpReconnect.Batcher do
 
   @impl true
   def init(_args) do
-    Process.flag(:trap_exit, true)
-    
     {:ok, spid} = Supervisor.start_link([], strategy: :one_for_one)
     
     {:ok, {spid, :c.pid(0,0,0)}}
@@ -82,18 +80,9 @@ defmodule AmqpReconnect.Batcher do
   end
 
   @impl true
-  def handle_info({:EXIT, pid, :normal}, state) do
-    Logger.info(":exit/:normal detected (#{inspect(pid)}) ...")
-
-    # Create/Publish another/the next batch.
+  def handle_info(:next, state) do
     Process.send_after(self(), :publish, 1_000)
     
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info({:EXIT, pid, :infrastructure_died}, state) do
-    Logger.info(":exit/:infrastructure_died detected (#{inspect(pid)}) ...")
     {:noreply, state}
   end
 end
