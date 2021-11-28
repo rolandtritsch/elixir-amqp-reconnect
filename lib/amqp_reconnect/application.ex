@@ -5,9 +5,12 @@ defmodule AmqpReconnect.Application do
 
   @impl true
   def start(_type, _args) do
+    import Supervisor.Spec, warn: false
+
     children = [
       AmqpReconnectWeb.Endpoint,
-      AmqpReconnect.Batcher
+      {AmqpReconnect.Batcher, 0},
+      {AmqpReconnect.Publisher, []}
     ]
 
     opts = [strategy: :one_for_one, name: AmqpReconnect.Supervisor]

@@ -7,46 +7,29 @@ defmodule AmqpReconnect.Publisher do
 
   # --- public functions
 
-  def start_link(args) do
-    GenServer.start_link(__MODULE__, args, name: __MODULE__)
+  def start_link(_args) do
+    GenStage.start_link(__MODULE__, :state_doesnt_matter)
   end
-
+ 
   # --- callbacks 
 
   @impl true
-  def init({batch, bpid}) do
-    Process.send_after(self(), :publish, 1_000)
-    state = {connect(), batch, bpid} 
-    {:ok, state}
+  def init(state) do
+    {:consumer, {state, connect()), subscribe_to: [AmqpReconnect.Batcher]}
   end
 
   @impl true
-  def handle_info(:kill, {%AMQP.Channel{pid: cpid}, _batch, _bpid} = state) do
-    Process.exit(cpid, :channel_died)
-    {:noreply, state}
-  end
-
-  @impl true
-  def handle_info(:publish, {_channel, [], _bpid} = state) do
-    {:stop, :normal, state}
-  end
-  
-  @impl true
-  def handle_info(:publish, {channel, [event | events], bpid}) do
-    Logger.info("Publishing event (#{event}) ...")
-
-    :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", event)
+  def handle_events(events, _from, {state, channel}) do
     
-    Process.send_after(self(), :publish, 1_000)
+    for events <- batch do
+      :ok = AMQP.Basic.publish(channel, "amq.fanout", "#", event)
+    end
 
-    state = {channel, events, bpid}
-    {:noreply, state}
+    {:noreply, [], {state, channel}}
   end
- 
+
   @impl true
-  def terminate(:normal, {channel, _batch, bpid}) do
-    Process.send_after(bpid, :next, 0)
-    
+  def terminate(:normal, {_state, channel}) do
     connection = channel.conn
     AMQP.Channel.close(channel)
     AMQP.Connection.close(connection)

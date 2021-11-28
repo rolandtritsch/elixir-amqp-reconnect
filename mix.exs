@@ -34,6 +34,7 @@ defmodule AmqpReconnect.MixProject do
   defp deps do
     [
       {:amqp, "~> 3.0"},
+      {:gen_stage, "~> 1.1"},
       {:jason, "~> 1.2"},
       {:phoenix, "~> 1.6.0"},
       {:plug_cowboy, "~> 2.5"},
