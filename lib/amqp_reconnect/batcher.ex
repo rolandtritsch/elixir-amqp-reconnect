@@ -1,5 +1,16 @@
 defmodule AmqpReconnect.Batcher do
-  @moduledoc false
+  @moduledoc """
+  This batcher starts a supervisor and waits for the request
+  to start creating batches of payloads to process.
+
+  For every batch it creates a publisher to process the batch.
+  It then makes the supervisor supervise that publisher.
+
+  As an extra complication we only want to process one batch at
+  a time/run one publisher at a time. For that we need to make
+  the batcher listen to/wait for an :exit/:normal message from
+  the publisher (and then create the next batch). 
+  """
 
   use GenServer
 
@@ -19,8 +30,8 @@ defmodule AmqpReconnect.Batcher do
 
   @impl true
   def init(_args) do
-    Process.flag(:trap_exit, true)
     {:ok, spid} = Supervisor.start_link([], strategy: :one_for_one)
+    
     {:ok, {spid, :c.pid(0,0,0)}}
   end
 
@@ -39,57 +50,39 @@ defmodule AmqpReconnect.Batcher do
   @impl true
   def handle_cast(:stop, {spid, _ppid} = state) do
     :ok = Supervisor.stop(spid)
-    {:noreply, state}
+    {:stop, :normal, state}
   end
 
   @impl true
   def handle_info(:publish, {spid, _ppid}) do
+    # Create the batch to process.
     timestamp = NaiveDateTime.utc_now
     batch = 1..10 |> Enum.map(fn i ->
       "payload - #{i} - #{timestamp}"
     end)
 
+    # Create/Configure the Publisher to start. Note: The :transient
+    # restart (means the Publisher will get restarted by the supervisor,
+    # if it exists for any other reason than :normal).
     publisher = %{
-      id: Publisher,
-      start: {AmqpReconnect.Publisher, :start_link, [batch]},
+      id: :publisher,
+      start: {AmqpReconnect.Publisher, :start_link, [{batch, self()}]},
       restart: :transient
     }
 
-    Supervisor.delete_child(spid, Publisher)
+    # Delete the old/previous publisher/child (if there is one)
+    # and then add the new one (with the new batch).
+    Supervisor.delete_child(spid, :publisher)
     {:ok, ppid} = Supervisor.start_child(spid, publisher)
     Logger.info("Publisher started (#{inspect(ppid)}) ...")
-          
-    Process.link(ppid)
+
     {:noreply, {spid, ppid}}
   end
 
   @impl true
-  def handle_info({:EXIT, pid, :normal}, {_spid, ppid} = state) do
-    Logger.info("Normal exit detected (#{inspect(pid)}/#{inspect(ppid)}) ...")
-    if pid == ppid, do: Process.send_after(self(), :publish, 1_000)
-    {:noreply, state}    
-  end
-
-  @impl true
-  def handle_info({:EXIT, pid, {:noproc, _}}, {spid, ppid}) do
-    Logger.info("Noproc exit detected (#{inspect(pid)}/#{inspect(ppid)}) ...")
-    ppid = if pid == ppid do
-      Process.sleep(1_000) # give the restarting publisher a second to come up
-      [{Publisher, ppid, :worker, [AmqpReconnect.Publisher]}] = Supervisor.which_children(spid)
-      Process.unlink(pid)
-      Process.link(ppid)
-      Logger.info("Publisher (#{inspect(ppid)}) got restarted ...")
-      ppid
-    else
-      Logger.info("Something got restarted ...")
-      ppid
-    end
-    {:noreply, {spid, ppid}}    
-  end
-  
-  @impl true
-  def handle_info({:EXIT, pid, reason}, state) do
-    Logger.info("Unexpected exit detected (#{inspect(pid)}/#{inspect(reason)}) ...")
-    {:noreply, state}    
+  def handle_info(:next, state) do
+    Process.send_after(self(), :publish, 1_000)
+    
+    {:noreply, state}
   end
 end
