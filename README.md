@@ -35,6 +35,7 @@ There are multiple solutions/branches available ...
 * `trap_exit` shows how to use `trap_exit`
 * `supervisor` shows how to use a `supervisor`
 * `stage` shows how to use `gen_stages` with a `supervisor`
+* `broadway` shows how to use `broadway`
 
 For more background you can read the blog
 [post](https://tedn.life/2021/10/26/reconnecting-to-rabbitmq-with-amqp-in-elixir/)
