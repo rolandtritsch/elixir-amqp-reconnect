@@ -9,8 +9,7 @@ defmodule AmqpReconnect.Application do
 
     children = [
       AmqpReconnectWeb.Endpoint,
-      {AmqpReconnect.Batcher, 0},
-      {AmqpReconnect.Publisher, []}
+      {AmqpReconnect.Batcher, 0}
     ]
 
     opts = [strategy: :one_for_one, name: AmqpReconnect.Supervisor]
