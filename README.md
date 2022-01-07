@@ -1,16 +1,14 @@
 # How to recover from a failing amqp connection
 
-When running an elixir service using an amqp/rabbitmq
-message-bus you need to plan for the connection and/or
-the channel to die unexepectedly.
+When running an elixir service using an amqp/rabbitmq message-bus you
+need to plan for the connection and/or the channel to die
+unexepectedly.
 
-Recovering from this is not as straight forward as
-it sounds, because you first need to detect that the
-connection/channel died and then you need to
-recreate/reestablish it on the fly and then you
-need to retry to publish what ever you want/need
-to publish (assuming you are implementing an at-least-once
-behavior).
+Recovering from this is not as straight forward as it sounds, because
+you first need to detect that the connection/channel died and then you
+need to recreate/reestablish it on the fly and then you need to retry
+to publish what ever you want/need to publish (assuming you are
+implementing an at-least-once behavior).
 
 This repo shows a couple of ways to make this happen.
 
@@ -35,7 +33,6 @@ There are multiple solutions/branches available ...
 * `trap_exit` shows how to use `trap_exit`
 * `supervisor` shows how to use a `supervisor`
 * `stage` shows how to use `gen_stages` with a `supervisor`
-* `broadway` shows how to use `broadway`
 
 For more background you can read the blog
 [post](https://tedn.life/2021/10/26/reconnecting-to-rabbitmq-with-amqp-in-elixir/)
